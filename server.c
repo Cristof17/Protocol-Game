@@ -14,6 +14,11 @@
 #define PARITY_STATE 30
 #define HAMMING_STATE 40
 
+#define LESS_RAND 1111
+#define MORE_RAND 2222
+#define SUCCESS_RAND 3333
+#define NONE_RAND 4444
+
 int get_state(char *argv)
 {
 	if (argv == NULL)
@@ -30,10 +35,27 @@ int get_state(char *argv)
 	return NONE_STATE;
 }
 
+int process_rand(char *answer)
+{
+	if ((strcmp(answer, "before")) == 0)
+		return LESS_RAND;
+	if ((strcmp(answer, "after")) == 0)
+		return MORE_RAND;
+	if ((strcmp(answer, "success")) == 0)
+		return SUCCESS_RAND;
+	return NONE_RAND;
+}
+
+int gen_rand(int low, int high)
+{
+	return low+ rand() %(high - low);
+}
+
 int main(int argc, char ** argv)
 {
 	msg r;
 	int i, res;
+	int j;
 	
 	printf("[RECEIVER] Starting.\n");
 	init(HOST, PORT);
@@ -46,6 +68,75 @@ int main(int argc, char ** argv)
 		case NONE_STATE:
 		{
 			printf("STATE = NONE \n");
+
+			recv_message(&r);
+			printf("Message = %s\n", r.payload);
+			memset(r.payload, 0, MSGSIZE);
+			sprintf(r.payload, "%s", "Hello");
+			send_message(&r);
+
+			recv_message(&r);
+			printf("%s\n", r.payload);
+			memset(r.payload, 0, MSGSIZE);
+			recv_message(&r);
+			printf("%s\n", r.payload);
+
+			memset(r.payload, 0, MSGSIZE);
+			sprintf(r.payload, "%s", "YEY");
+			send_message(&r);
+
+			memset(r.payload, 0, MSGSIZE);
+			sprintf(r.payload, "%s", "OK");
+			send_message(&r);
+			recv_message(&r);
+			printf("%s\n", r.payload);
+
+			int low = 0;
+			int high = 1000;
+			int random = gen_rand(low, high);
+			int result;
+			int middle;
+			int found = 0;
+
+			memset(r.payload, 0, MSGSIZE);
+			sprintf(r.payload, "%d", random);
+
+			for (j = 0; j < 10; ++j) {
+
+				send_message(&r);
+				recv_message(&r);
+				result = process_rand(r.payload);
+				middle = (high-low)/2;
+
+				switch(result) {
+				case LESS_RAND:
+				{
+					memset(r.payload, 0, MSGSIZE);
+					random = gen_rand(low, middle);
+					sprintf(r.payload, "%d", random);
+				}
+				case MORE_RAND:
+				{
+					memset(r.payload, 0, MSGSIZE);
+					random = gen_rand(middle, high);
+					sprintf(r.payload, "%d", random);
+				}
+				case SUCCESS_RAND:
+				{
+					found = 1;
+					break;
+				}
+				case NONE_RAND:
+				{
+				}
+				default:
+					break;
+				}
+
+				if (found)
+					break;
+			}
+
 			break;
 		}
 		case ACK_STATE:
