@@ -88,7 +88,9 @@ int main(int argc, char ** argv)
 			memset(r.payload, 0, MSGSIZE);
 			sprintf(r.payload, "%s", "OK");
 			send_message(&r);
-			recv_message(&r);
+
+			memset(r.payload, 0, MSGSIZE);
+			//recv_message(&r);
 			printf("%s\n", r.payload);
 
 			int low = 0;
@@ -101,6 +103,7 @@ int main(int argc, char ** argv)
 			memset(r.payload, 0, MSGSIZE);
 			sprintf(r.payload, "%d", random);
 
+			/*
 			for (j = 0; j < 10; ++j) {
 
 				send_message(&r);
@@ -135,7 +138,7 @@ int main(int argc, char ** argv)
 
 				if (found)
 					break;
-			}
+			}*/
 
 			break;
 		}
